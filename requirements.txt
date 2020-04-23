@@ -1,0 +1,4 @@
+jarbas_utils
+ResponsiveVoice
+opentone>=0.1.2
+pydub
