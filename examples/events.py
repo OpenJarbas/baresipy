@@ -8,7 +8,9 @@ class JokeBOT(BareSIP):
         self.accept_call()
 
     def handle_call_established(self):
+        self.speak("Welcome to the jokes bot")
         self.speak(get_joke())
+        self.speak("Goodbye")
         self.hang()
 
 
