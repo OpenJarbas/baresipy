@@ -1,7 +1,7 @@
 from time import sleep
 import pexpect
 from os.path import join, expanduser
-from jarbas_utils import create_daemon, wait_for_exit_signal
+from jarbas_utils import create_daemon
 from opentone import ToneGenerator
 from jarbas_utils.log import LOG
 from responsive_voice import ResponsiveVoice
@@ -131,6 +131,7 @@ class BareSIP:
             if n not in "0123456789":
                 LOG.error("invalid dtmf tone")
                 return
+        LOG.info("Sending dtmf tones for " + number)
         dtmf = join(tempfile.gettempdir(), number + ".wav")
         ToneGenerator().dtmf_to_wave(number, dtmf)
         self.send_audio(dtmf)
@@ -140,6 +141,7 @@ class BareSIP:
             LOG.error("Speaking without an active call!")
             return
         else:
+            LOG.info("Sending TTS for " + speech)
             self.send_audio(self.tts.get_mp3(speech))
 
     def send_audio(self, wav_file):
@@ -148,6 +150,7 @@ class BareSIP:
         is_muted = self.mic_muted
         if is_muted:
             self.unmute_mic()
+        LOG.info("transmitting audio")
         self.do_command("/ausrc aufile," + wav_file)
         # wait till playback ends
         sleep(duration - 0.5)
@@ -219,8 +222,7 @@ class BareSIP:
         LOG.info("Call established to: " + number)
 
     def handle_call_ended(self, reason):
-        number = self.current_call
-        LOG.info("Call with " + number + " ended")
+        LOG.info("Call ended")
         LOG.debug("Reason: " + reason)
         self.quit()
 

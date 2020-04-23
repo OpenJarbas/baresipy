@@ -43,7 +43,6 @@ class SIPBOT(BareSIP):
         self.say("logging in")
 
 
-
 gateway = "sipx.mattkeys.net"
 user = "test_phone"
 pswd = "1VDSSonPYxlC"
