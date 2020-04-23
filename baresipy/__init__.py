@@ -29,6 +29,7 @@ class BareSIP:
         self.running = False
         self.ready = False
         self.mic_muted = False
+        self.abort = False
         self.current_call = None
         self._call_status = None
         self.audio = None
@@ -107,6 +108,9 @@ class BareSIP:
         else:
             LOG.info("Mic already unmuted")
 
+    def accept_call(self):
+        self.do_command("/accept")
+
     def list_calls(self):
         self.do_command("/listcalls")
 
@@ -120,10 +124,11 @@ class BareSIP:
         if self.running:
             if self.current_call:
                 self.hang()
-            self.do_command("/quit")
+            self.baresip.sendline("/quit")
         self.running = False
         self.current_call = None
         self._call_status = None
+        self.abort = True
 
     def send_dtmf(self, number):
         number = str(number)
@@ -139,23 +144,18 @@ class BareSIP:
     def speak(self, speech):
         if not self.call_established:
             LOG.error("Speaking without an active call!")
-            return
         else:
             LOG.info("Sending TTS for " + speech)
             self.send_audio(self.tts.get_mp3(speech))
+            sleep(0.5)
 
     def send_audio(self, wav_file):
         wav_file, duration = self.convert_audio(wav_file)
         # send audio stream
-        is_muted = self.mic_muted
-        if is_muted:
-            self.unmute_mic()
         LOG.info("transmitting audio")
         self.do_command("/ausrc aufile," + wav_file)
         # wait till playback ends
         sleep(duration - 0.5)
-        if is_muted:
-            self.mute_mic()
         # avoid baresip exiting
         self.do_command("/ausrc alsa,default")
 
@@ -202,6 +202,20 @@ class BareSIP:
             return subprocess.Popen(play_mp3_cmd)
 
     # events
+    def handle_incoming_call(self, number):
+        LOG.info("Incoming call: " + number)
+        if self.call_established:
+            LOG.info("already in a call, rejecting")
+            sleep(0.1)
+            self.do_command("b")
+        else:
+            LOG.info("default behaviour, rejecting call")
+            sleep(0.1)
+            self.do_command("b")
+
+    def handle_call_rejected(self, number):
+        LOG.info("Rejected incoming call: " + number)
+
     def handle_call_timestamp(self, timestr):
         LOG.info("Call time: " + timestr)
 
@@ -218,13 +232,11 @@ class BareSIP:
         LOG.info(number + " is Ringing")
 
     def handle_call_established(self):
-        number = self.current_call
-        LOG.info("Call established to: " + number)
+        LOG.info("Call established")
 
     def handle_call_ended(self, reason):
         LOG.info("Call ended")
         LOG.debug("Reason: " + reason)
-        self.quit()
 
     def _handle_no_accounts(self):
         LOG.debug("No accounts setup")
@@ -264,8 +276,17 @@ class BareSIP:
                     elif "All 1 useragent registered successfully!" in out:
                         self.ready = True
                         self.handle_login_success()
-                    elif "ua: SIP register failed:" in out:
+                    elif "ua: SIP register failed:" in out or\
+                            "401 Unauthorized" in out:
                         self.handle_login_failure()
+                    elif "Incoming call from: " in out:
+                        num = out.split("Incoming call from: ")[1].strip()
+                        self.current_call = num
+                        self._call_status = "INCOMING"
+                        self.handle_incoming_call(num)
+                    elif "call: rejecting incoming call from " in out:
+                        num = out.split("rejecting incoming call from ")[1].split(" ")[0].strip()
+                        self.handle_call_rejected(num)
                     elif "call: SIP Progress: 180 Ringing" in out:
                         self.handle_call_ringing()
                         status = "RINGING"
@@ -279,10 +300,12 @@ class BareSIP:
                         self.handle_call_status(status)
                         self._call_status = status
                     elif "Call established:" in out:
-                        self.handle_call_established()
+
                         status = "ESTABLISHED"
                         self.handle_call_status(status)
                         self._call_status = status
+                        sleep(0.5)
+                        self.handle_call_established()
                     elif "call: hold " in out:
                         n = out.split("call: hold ")[1]
                         status = "ON HOLD"
@@ -299,6 +322,8 @@ class BareSIP:
                     elif "call muted" in out:
                         self.mic_muted = True
                         self.handle_mic_muted()
+                    elif "Register: Connection timed out" in out:
+                        self.handle_login_failure()
                     elif "call un-muted" in out:
                         self.mic_muted = False
                         self.handle_mic_unmuted()
@@ -337,4 +362,6 @@ class BareSIP:
     def wait_until_ready(self):
         while not self.ready:
             sleep(0.1)
+            if self.abort:
+                return
 
