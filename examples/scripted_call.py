@@ -1,19 +1,18 @@
 from baresipy import BareSIP
 from time import sleep
 
-speech = "this is jarbas personal assistant speaking. this was a test"
 
-audio = "examples/acdc.mp3"
-
-
-to = "jarbas_laptop@sipx.mattkeys.net"
-
-gateway = "sipx.mattkeys.net"
-user = "test_phone"
-pswd = "1VDSSonPYxlC"
+gateway = "your_sip.gateway.net"
+user = "your_phone"
+pswd = "your_password"
 debug = False
 
 b = BareSIP(user, pswd, gateway, debug=debug)
+
+to = "jarbas_laptop@sipx.mattkeys.net"
+speech = "this is jarbas personal assistant speaking. this was a test"
+audio = "examples/acdc.mp3"
+
 
 b.call(to)
 

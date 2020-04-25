@@ -14,9 +14,9 @@ class JokeBOT(BareSIP):
         self.hang()
 
 
-gateway = "sipx.mattkeys.net"
-user = "test_phone"
-pswd = "1VDSSonPYxlC"
+gateway = "your_sip.gateway.net"
+user = "your_phone"
+pswd = "your_password"
 
 b = JokeBOT(user, pswd, gateway)
 
