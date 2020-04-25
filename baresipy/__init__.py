@@ -8,12 +8,10 @@ import tempfile
 import logging
 import subprocess
 from baresipy.utils import create_daemon
+from baresipy.utils.log import LOG
 
 logging.getLogger("urllib3.connectionpool").setLevel("WARN")
 logging.getLogger("pydub.converter").setLevel("WARN")
-
-
-LOG = logging.getLogger("baresipy")
 
 
 class BareSIP:
