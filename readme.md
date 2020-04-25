@@ -72,16 +72,6 @@ while b.running:
 
 ```
 
-# TODO
-
-- improve detection of hanging up calls
-- contact list
-    - json_database
-    
-- sipxcom subclass
-    - sipxcom rest api integration 
-        - sync contact list
-        
         
 # Credits
 
