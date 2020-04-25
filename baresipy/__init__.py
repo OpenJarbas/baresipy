@@ -290,7 +290,8 @@ class BareSIP:
                         self.ready = True
                         self.handle_login_success()
                     elif "ua: SIP register failed:" in out or\
-                            "401 Unauthorized" in out:
+                            "401 Unauthorized" in out or \
+                            "Register: Destination address required" in out:
                         self.handle_login_failure()
                     elif "Incoming call from: " in out:
                         num = out.split("Incoming call from: ")[1].strip()
