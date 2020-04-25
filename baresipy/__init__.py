@@ -1,16 +1,19 @@
 from time import sleep
 import pexpect
 from os.path import join, expanduser
-from jarbas_utils import create_daemon
 from opentone import ToneGenerator
-from jarbas_utils.log import LOG
 from responsive_voice import ResponsiveVoice
 from pydub import AudioSegment
 import tempfile
 import logging
 import subprocess
+from baresipy.utils import create_daemon
+
 logging.getLogger("urllib3.connectionpool").setLevel("WARN")
 logging.getLogger("pydub.converter").setLevel("WARN")
+
+
+LOG = logging.getLogger("baresipy")
 
 
 class BareSIP:
@@ -150,6 +153,9 @@ class BareSIP:
             sleep(0.5)
 
     def send_audio(self, wav_file):
+        if not self.call_established:
+            LOG.error("Can't send audio without an active call!")
+            return
         wav_file, duration = self.convert_audio(wav_file)
         # send audio stream
         LOG.info("transmitting audio")
@@ -258,6 +264,15 @@ class BareSIP:
     def handle_mic_unmuted(self):
         LOG.info("Microphone unmuted")
 
+    def handle_audio_stream_failure(self):
+        LOG.debug("Aborting call, maybe we reached voicemail?")
+        self.hang()
+
+    def handle_error(self, error):
+        LOG.error(error)
+        if error == "failed to set audio-source (No such device)":
+            self.handle_audio_stream_failure()
+
     # event loop
     def _read(self):
         self.running = True
@@ -350,6 +365,9 @@ class BareSIP:
                             if ts != self._ts:
                                 self._ts = ts
                                 self.handle_call_timestamp(ts)
+                    elif "failed to set audio-source (No such device)" in out:
+                        error = "failed to set audio-source (No such device)"
+                        self.handle_error(error)
 
                     self._prev_output = out
             except pexpect.exceptions.EOF:
