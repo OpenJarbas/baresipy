@@ -18,7 +18,17 @@ class ContactList:
             makedirs(db_dir)
         self.db_path = join(db_dir, database_name)
 
-    def search_contact(self, name):
+    def search_contact(self, url):
+        with JsonDatabase("contacts", self.db_path) as db:
+            users = db.search_by_value("url", url)
+            if len(users):
+                return users[0]
+        return None
+
+    def is_contact(self, url):
+        return self.search_contact(url) is not None
+
+    def get_contact(self, name):
         with JsonDatabase("contacts", self.db_path) as db:
             users = db.search_by_value("name", name)
             if len(users):
@@ -26,14 +36,14 @@ class ContactList:
         return None
 
     def add_contact(self, name, url):
-        if self.search_contact(name) is not None:
+        if self.get_contact(name) is not None:
             raise ContactExists
         with JsonDatabase("contacts", self.db_path) as db:
             user = {"name": name, "url": url}
             db.add_item(user)
 
     def update_contact(self, name, url):
-        contact = self.search_contact(name)
+        contact = self.get_contact(name)
         if contact is None:
             raise ContactDoesNotExist
 
@@ -42,7 +52,7 @@ class ContactList:
             db.update_item(item_id, {"name": name, "url": url})
 
     def remove_contact(self, name):
-        contact = self.search_contact(name)
+        contact = self.get_contact(name)
         if contact is None:
             raise ContactDoesNotExist
         with JsonDatabase("contacts", self.db_path) as db:

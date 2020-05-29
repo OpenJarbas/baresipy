@@ -16,7 +16,7 @@ logging.getLogger("pydub.converter").setLevel("WARN")
 
 
 class BareSIP(Thread):
-    def __init__(self, user, pwd, gateway, tts=None, debug=False):
+    def __init__(self, user, pwd, gateway, tts=None, debug=False, block=True):
         self.debug = debug
         self.user = user
         self.pwd = pwd
@@ -39,7 +39,8 @@ class BareSIP(Thread):
         self.baresip = pexpect.spawn('baresip')
         super().__init__()
         self.start()
-        self.wait_until_ready()
+        if block:
+            self.wait_until_ready()
 
     # properties
     @property
