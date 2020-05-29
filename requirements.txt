@@ -2,3 +2,4 @@ ResponsiveVoice
 opentone>=0.1.2
 pydub
 pexpect
+json_database>=0.1.2

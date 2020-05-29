@@ -7,6 +7,7 @@ from pydub import AudioSegment
 import tempfile
 import logging
 import subprocess
+from threading import Thread
 from baresipy.utils import create_daemon
 from baresipy.utils.log import LOG
 
@@ -14,7 +15,7 @@ logging.getLogger("urllib3.connectionpool").setLevel("WARN")
 logging.getLogger("pydub.converter").setLevel("WARN")
 
 
-class BareSIP:
+class BareSIP(Thread):
     def __init__(self, user, pwd, gateway, tts=None, debug=False):
         self.debug = debug
         self.user = user
@@ -36,7 +37,8 @@ class BareSIP:
         self.audio = None
         self._ts = None
         self.baresip = pexpect.spawn('baresip')
-        create_daemon(self._read)
+        super().__init__()
+        self.start()
         self.wait_until_ready()
 
     # properties
@@ -272,7 +274,7 @@ class BareSIP:
             self.handle_audio_stream_failure()
 
     # event loop
-    def _read(self):
+    def run(self):
         self.running = True
         while self.running:
             try:
@@ -291,7 +293,9 @@ class BareSIP:
                         self.handle_login_success()
                     elif "ua: SIP register failed:" in out or\
                             "401 Unauthorized" in out or \
-                            "Register: Destination address required" in out:
+                            "Register: Destination address required" in out or\
+                            "Register: Connection timed out" in out:
+                        self.handle_error(out)
                         self.handle_login_failure()
                     elif "Incoming call from: " in out:
                         num = out.split("Incoming call from: ")[1].strip()
@@ -336,8 +340,6 @@ class BareSIP:
                     elif "call muted" in out:
                         self.mic_muted = True
                         self.handle_mic_muted()
-                    elif "Register: Connection timed out" in out:
-                        self.handle_login_failure()
                     elif "call un-muted" in out:
                         self.mic_muted = False
                         self.handle_mic_unmuted()
