@@ -114,6 +114,9 @@ class BareSIP(Thread):
 
     def accept_call(self):
         self.do_command("/accept")
+        status = "ESTABLISHED"
+        self.handle_call_status(status)
+        self._call_status = status
 
     def list_calls(self):
         self.do_command("/listcalls")
