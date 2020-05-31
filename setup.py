@@ -1,8 +1,8 @@
 from setuptools import setup
 
 setup(
-    name='bareispy',
-    version='0.1',
+    name='baresipy',
+    version='0.1.2',
     packages=['baresipy', 'baresipy.utils'],
     url='https://github.com/JarbasAl/baresipy',
     install_requires=["ResponsiveVoice",

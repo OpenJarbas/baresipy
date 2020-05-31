@@ -18,6 +18,38 @@ class ContactList:
             makedirs(db_dir)
         self.db_path = join(db_dir, database_name)
 
+    def import_baresip_contacts(self):
+        db_dir = join(expanduser("~"), ".baresip", "contacts")
+        with open(db_dir) as f:
+            lines = f.readlines()
+
+        for line in lines:
+            if line.startswith("#"):
+                continue
+            user, address = line.split("<")
+            user = user.replace('"', "")
+            address = address.split(">")[0]
+            with JsonDatabase("contacts", self.db_path) as db:
+                users = db.search_by_value("url", address)
+            if not users:
+                self.add_contact(user, address)
+            else:
+                self.update_contact(user, address)
+
+    def export_baresip_contacts(self):
+        db_dir = join(expanduser("~"), ".baresip", "contacts")
+        with JsonDatabase("contacts", self.db_path) as db:
+            users = db.search_by_key("url")
+        with open(db_dir) as f:
+            lines = f.readlines()
+        for user in users:
+            line = "\"{name}\" <{address}>".format(name=user["name"],
+                                               address=user["url"])
+            if line not in lines:
+                lines.append(line + "\n")
+        with open(db_dir, "w") as f:
+            f.writelines(lines)
+
     def search_contact(self, url):
         with JsonDatabase("contacts", self.db_path) as db:
             users = db.search_by_value("url", url)
@@ -62,3 +94,8 @@ class ContactList:
     def print_contacts(self):
         with JsonDatabase("contacts", self.db_path) as db:
             db.print()
+
+    def list_contacts(self):
+        with JsonDatabase("contacts", self.db_path) as db:
+            users = db.search_by_key("url")
+        return users
