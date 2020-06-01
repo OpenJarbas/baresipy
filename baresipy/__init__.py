@@ -74,7 +74,6 @@ class BareSIP(Thread):
             self.do_command("/hangup")
             self.current_call = None
             self._call_status = None
-            self.handle_call_ended("hanged up")
         else:
             LOG.error("No active call to hang")
 
@@ -302,7 +301,8 @@ class BareSIP(Thread):
                         self.handle_error(out)
                         self.handle_login_failure()
                     elif "Incoming call from: " in out:
-                        num = out.split("Incoming call from: ")[1].strip()
+                        num = out.split("Incoming call from: ")[
+                            1].split(" - (press 'a' to accept)")[0].strip()
                         self.current_call = num
                         self._call_status = "INCOMING"
                         self.handle_incoming_call(num)
