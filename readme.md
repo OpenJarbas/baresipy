@@ -4,6 +4,8 @@ A python wrapper around [baresip](https://github.com/alfredh/baresip)
 
 Make voip calls/bots from python!
 
+![](./logo.png)
+
 # install
 
 ```bash
