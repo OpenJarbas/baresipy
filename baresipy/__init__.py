@@ -1,6 +1,5 @@
 from time import sleep
 import pexpect
-from os.path import join, expanduser
 from opentone import ToneGenerator
 from responsive_voice import ResponsiveVoice
 from pydub import AudioSegment
@@ -10,13 +9,53 @@ import subprocess
 from threading import Thread
 from baresipy.utils import create_daemon
 from baresipy.utils.log import LOG
+import baresipy.config
+from os.path import expanduser, join, isfile, isdir
+from os import makedirs
+import signal
 
 logging.getLogger("urllib3.connectionpool").setLevel("WARN")
 logging.getLogger("pydub.converter").setLevel("WARN")
 
 
 class BareSIP(Thread):
-    def __init__(self, user, pwd, gateway, tts=None, debug=False, block=True):
+    def __init__(self, user, pwd, gateway, tts=None, debug=False,
+                 block=True, config_path=None, sounds_path=None):
+        config_path = config_path or join("~", ".baresipy")
+        self.config_path = expanduser(config_path)
+        if not isdir(self.config_path):
+            makedirs(self.config_path)
+        if isfile(join(self.config_path, "config")):
+            with open(join(self.config_path, "config"), "r") as f:
+                self.config = f.read()
+            LOG.info("config loaded from " + self.config_path + "/config")
+            self.updated_config = False
+        else:
+            self.config = baresipy.config.DEFAULT
+            self.updated_config = True
+
+        self._original_config = str(self.config)
+
+        if sounds_path is not None and "#audio_path" in self.config:
+            self.updated_config = True
+            if sounds_path is False:
+                # sounds disabled
+                self.config = self.config.replace(
+                    "#audio_path		/usr/share/baresip",
+                    "audio_path		/dont/load")
+            elif isdir(sounds_path):
+                self.config = self.config.replace(
+                    "#audio_path		/usr/share/baresip",
+                    "audio_path		" + sounds_path)
+
+        if self.updated_config:
+            with open(join(self.config_path, "config.bak"), "w") as f:
+                f.write(self._original_config)
+
+            LOG.info("saving config")
+            with open(join(self.config_path, "config"), "w") as f:
+                f.write(self.config)
+
         self.debug = debug
         self.user = user
         self.pwd = pwd
@@ -36,7 +75,8 @@ class BareSIP(Thread):
         self._call_status = None
         self.audio = None
         self._ts = None
-        self.baresip = pexpect.spawn('baresip')
+        self.baresip = pexpect.spawn('baresip -f ' + self.config_path)
+        #self.baresip = pexpect.spawn('baresip')
         super().__init__()
         self.start()
         if block:
@@ -126,6 +166,10 @@ class BareSIP(Thread):
         return self.call_status
 
     def quit(self):
+        if self.updated_config:
+            LOG.info("restoring original config")
+            with open(join(self.config_path, "config"), "w") as f:
+                f.write(self._original_config)
         LOG.info("Exiting")
         if self.running:
             if self.current_call:
@@ -135,6 +179,8 @@ class BareSIP(Thread):
         self.current_call = None
         self._call_status = None
         self.abort = True
+        self.baresip.close()
+        self.baresip.kill(signal.SIGKILL)
 
     def send_dtmf(self, number):
         number = str(number)
@@ -373,14 +419,20 @@ class BareSIP(Thread):
                     elif "failed to set audio-source (No such device)" in out:
                         error = "failed to set audio-source (No such device)"
                         self.handle_error(error)
-
+                    elif "terminated by signal" in out or "ua: stop all" in \
+                            out:
+                        self.running = False
                     self._prev_output = out
             except pexpect.exceptions.EOF:
                 # baresip exited
-                self.quit()
+                self.running = False
             except pexpect.exceptions.TIMEOUT:
                 # nothing happened for a while
                 pass
+            except KeyboardInterrupt:
+                self.running = False
+
+        self.quit()
 
     def wait_until_ready(self):
         while not self.ready:
