@@ -76,7 +76,6 @@ class BareSIP(Thread):
         self.audio = None
         self._ts = None
         self.baresip = pexpect.spawn('baresip -f ' + self.config_path)
-        #self.baresip = pexpect.spawn('baresip')
         super().__init__()
         self.start()
         if block:
