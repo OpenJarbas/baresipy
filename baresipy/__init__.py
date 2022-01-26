@@ -13,6 +13,7 @@ import baresipy.config
 from os.path import expanduser, join, isfile, isdir
 from os import makedirs
 import signal
+import re
 
 logging.getLogger("urllib3.connectionpool").setLevel("WARN")
 logging.getLogger("pydub.converter").setLevel("WARN")
@@ -316,6 +317,9 @@ class BareSIP(Thread):
         LOG.debug("Aborting call, maybe we reached voicemail?")
         self.hang()
 
+    def handle_dtmf_received(self, char, duration):
+        LOG.info("Received DTMF symbol '{0}' duration={1}".format(char, duration))
+
     def handle_error(self, error):
         LOG.error(error)
         if error == "failed to set audio-source (No such device)":
@@ -421,6 +425,10 @@ class BareSIP(Thread):
                     elif "terminated by signal" in out or "ua: stop all" in \
                             out:
                         self.running = False
+                    elif "received DTMF:" in out:
+                        match = re.search('received DTMF: \'(.)\' \(duration=(\d+)\)', out)
+                        if match:
+                            self.handle_dtmf_received(match.group(1), int(match.group(2)))
                     self._prev_output = out
             except pexpect.exceptions.EOF:
                 # baresip exited
