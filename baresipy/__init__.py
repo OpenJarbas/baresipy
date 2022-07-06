@@ -324,6 +324,9 @@ class BareSIP(Thread):
         LOG.error(error)
         if error == "failed to set audio-source (No such device)":
             self.handle_audio_stream_failure()
+            
+    def handle_unhandled_output(self, output):
+        LOG.info("Received unhandled output: '{0}'".format(output))
 
     # event loop
     def run(self):
@@ -429,6 +432,8 @@ class BareSIP(Thread):
                         match = re.search('received DTMF: \'(.)\' \(duration=(\d+)\)', out)
                         if match:
                             self.handle_dtmf_received(match.group(1), int(match.group(2)))
+                    else:
+                        self.handle_unhandled_output(out)
                     self._prev_output = out
             except pexpect.exceptions.EOF:
                 # baresip exited
