@@ -64,9 +64,12 @@ class BareSIP(Thread):
         if tts:
             self.tts = tts
         else:
-            self.tts = ResponsiveVoice(gender=ResponsiveVoice.MALE)
-        self._login = "sip:{u}@{g};auth_pass={p}".format(u=self.user, p=self.pwd,
-                                               g=self.gateway)
+            self.tts = ResponsiveVoice(gender=ResponsiveVoice.MALE)]
+        # This string is broken
+        # self._login = "sip:{u}@{g};auth_pass={p}".format(u=self.user, p=self.pwd,
+        #                                 g=self.gateway)
+        self._login = "<sip:{u}@{g}>;auth_pass={p}".format(u=self.user, p=self.pwd,
+                                        g=self.gateway)
         self._prev_output = ""
         self.running = False
         self.ready = False
