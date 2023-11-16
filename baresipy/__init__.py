@@ -20,7 +20,7 @@ logging.getLogger("pydub.converter").setLevel("WARN")
 
 
 class BareSIP(Thread):
-    def __init__(self, user, pwd, gateway, tts=None, debug=False,
+    def __init__(self, user, pwd, gateway, transport='tcp', reg=60, tts=None, debug=False,
                  block=True, config_path=None, sounds_path=None):
         config_path = config_path or join("~", ".baresipy")
         self.config_path = expanduser(config_path)
@@ -61,15 +61,17 @@ class BareSIP(Thread):
         self.user = user
         self.pwd = pwd
         self.gateway = gateway
+        self.transport = transport
+        self.reg = reg
         if tts:
             self.tts = tts
         else:
-            self.tts = ResponsiveVoice(gender=ResponsiveVoice.MALE)]
+            self.tts = ResponsiveVoice(gender=ResponsiveVoice.MALE)
         # This string is broken
         # self._login = "sip:{u}@{g};auth_pass={p}".format(u=self.user, p=self.pwd,
         #                                 g=self.gateway)
-        self._login = "<sip:{u}@{g}>;auth_pass={p}".format(u=self.user, p=self.pwd,
-                                        g=self.gateway)
+        self._login = "<sip:{u}@{g};transport={t}>;auth_pass={p};regint={r}".format(u=self.user, p=self.pwd,
+                                        g=self.gateway,t=self.transport, r=self.reg)
         self._prev_output = ""
         self.running = False
         self.ready = False
