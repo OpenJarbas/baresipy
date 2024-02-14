@@ -67,7 +67,7 @@ class BareSIP(Thread):
         else:
             self.tts = ResponsiveVoice(gender=ResponsiveVoice.MALE)
         self._login = "sip:{u}@{g};transport={t};auth_pass={p}".format(u=self.user, p=self.pwd,
-                                               g=self.gateway)
+                                               g=self.gateway, t=self.transport)
         self._prev_output = ""
         self.running = False
         self.ready = False
