@@ -20,7 +20,7 @@ logging.getLogger("pydub.converter").setLevel("WARN")
 
 
 class BareSIP(Thread):
-    def __init__(self, user, pwd, gateway, transport, tts=None, debug=False,
+    def __init__(self, user, pwd, gateway, transport="udp", tts=None, debug=False,
                  block=True, config_path=None, sounds_path=None):
         config_path = config_path or join("~", ".baresipy")
         self.config_path = expanduser(config_path)
