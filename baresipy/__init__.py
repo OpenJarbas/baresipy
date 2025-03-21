@@ -290,9 +290,9 @@ class BareSIP(Thread):
     def handle_call_established(self):
         LOG.info("Call established")
 
-    def handle_call_ended(self, reason):
+    def handle_call_ended(self, reason, number):
         LOG.info("Call ended")
-        LOG.debug("Reason: " + reason)
+        LOG.debug(f"Number: {number} , Reason: {reaon}")
 
     def _handle_no_accounts(self):
         LOG.debug("No accounts setup")
@@ -402,10 +402,11 @@ class BareSIP(Thread):
                         self.handle_mic_unmuted()
                     elif "session closed:" in out:
                         reason = out.split("session closed:")[1].strip()
+                        number = out.split(": session closed:")[0].strip()
                         status = "DISCONNECTED"
                         self.handle_call_status(status)
                         self._call_status = status
-                        self.handle_call_ended(reason)
+                        self.handle_call_ended(reason, number)
                         self.mic_muted = False
                     elif "(no active calls)" in out:
                         status = "DISCONNECTED"
