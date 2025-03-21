@@ -290,7 +290,7 @@ class BareSIP(Thread):
     def handle_call_established(self):
         LOG.info("Call established")
 
-    def handle_call_ended(self, reason, number):
+    def handle_call_ended(self, reason, number=None):
         LOG.info("Call ended")
         LOG.debug(f"Number: {number} , Reason: {reason}")
 
