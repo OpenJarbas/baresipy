@@ -292,7 +292,7 @@ class BareSIP(Thread):
 
     def handle_call_ended(self, reason, number):
         LOG.info("Call ended")
-        LOG.debug(f"Number: {number} , Reason: {reaon}")
+        LOG.debug(f"Number: {number} , Reason: {reason}")
 
     def _handle_no_accounts(self):
         LOG.debug("No accounts setup")
